@@ -11,6 +11,7 @@
 - [Running the Benchmarks](#running-the-benchmarks)
     - [Running the Benchmarks in the Docker Build Environment](#running-the-benchmarks-in-the-docker-build-environment)
 - [Visualizing the results](#visualizing-the-results)
+- [CVE-2019-3859 Evaluation](#cve-2019-3859-evaluation)
 
 ## Intro
 
@@ -193,3 +194,17 @@ With the Docker build environment, run the LightSLH plotting script in the conta
 ```shell
 ./dev.sh run bash -c 'cd LightSLH-benchmarks/bench/wrapper && python3 plots.py'
 ```
+
+## CVE-2019-3859 Evaluation
+
+The evaluation focuses on spatial memory safety with AddressSanitizer (ASan). It does not assess information flow.
+
+The harness at [`cve-2019-3859/reproducer.c`](cve-2019-3859/reproducer.c) injects a malformed, already-decrypted SSH response into libssh2's packet queue and exercises `libssh2_userauth_list()`.
+
+| Build | Result |
+| --- | --- |
+| libssh2 1.8.0, unprotected | Returned an empty method list; no crash. |
+| libssh2 1.8.0, ASan | Reported a heap-buffer-overflow read in `memmove`. |
+| libssh2 1.8.1 | Rejected the response with `Unexpected userauth list size`. |
+
+This in-process test isolates the parser; it is not an end-to-end SSH session test. DualGuard results and runtime overhead have not yet been measured. See the [evaluation notes](CVE-2019-3859-ASAN-Evaluation.md) for setup details and limitations.
