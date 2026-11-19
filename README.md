@@ -1,191 +1,367 @@
 # DualGuard: Comprehensive and Efficient Memory Safety across Sequential and Speculative Execution
 
-- [Intro](#intro)
-- [Getting Started](#getting-started)
-    - [Using Pre-built DualGuard with Docker](#using-pre-built-dualguard-with-docker)
-    - [Building DualGuard from Source](#building-dualguard-from-source)
-        - [System Requirements](#system-requirements)
-        - [Building the Toolchain](#building-the-toolchain)
-    - [Building from Source inside a Docker Build Environment](#building-from-source-inside-a-docker-build-environment)
-- [Smoke Test](#smoke-test)
-- [Running the Benchmarks](#running-the-benchmarks)
-    - [Running the Benchmarks in the Docker Build Environment](#running-the-benchmarks-in-the-docker-build-environment)
-- [CVE-2019-3859 Evaluation](#cve-2019-3859-evaluation)
+This directory contains the source code and evaluation artifacts for the peer-reviewed DualGuard paper. The repository has been anonymized for review and includes DualGuard, its toolchain, and the benchmarks used to reproduce the paper's results. The SPEC CPU 2017 benchmark suite is not included due to copyright restrictions.
 
-## Intro
+DualGuard can be used either through a pre-built Docker image or by building the toolchain from source. The pre-built image is the recommended option for users who want to reproduce the evaluation without manually configuring the development environment. For users who want to modify DualGuard or rebuild individual components, a separate Docker-based build environment is provided.
 
-This repository contains the source code for the peer-reviewed paper and has been anonymized for review. The sections below explain how to use this repository and reproduce the paper’s results. It includes all the source code of DualGuard, tool chain, and benchmarks except SPEC CPU 2017 benchmark suite that cannot be shared due to copy right issue. DualGuard can be either run by using the pre-built Docker image or by building from source. We recommand using the pre-built Docker image to ease the burden on setting up the tool chain.
+## Contents
 
-## Getting Started
+1. [Getting Started](#1-getting-started)
+   - [Using Pre-built DualGuard with Docker](#11-using-pre-built-dualguard-with-docker)
+   - [Building DualGuard from Source](#12-building-dualguard-from-source)
+   - [System Requirements](#121-system-requirements)
+   - [Building the Toolchain](#122-building-the-toolchain)
+   - [Building from Source inside a Docker Build Environment](#123-building-from-source-inside-a-docker-build-environment)
+2. [Smoke Test](#2-smoke-test)
+3. [Running the Benchmarks](#3-running-the-benchmarks)
+   - [Running the Benchmarks in the Docker Build Environment](#31-running-the-benchmarks-in-the-docker-build-environment)
+4. [CVE-2019-3859 Evaluation](#4-cve-2019-3859-evaluation)
 
-### Using Pre-built DualGuard with Docker
+---
 
-Make sure the test machine has Docker installed. We provide the docker image inside the anonymized Dockerhub [repo](https://hub.docker.com/r/dualguard/dualguard). Get the container running with the following commands. 
+## 1. Getting Started
 
-```sh
-# Pull Docker image from DockerHub
+DualGuard can be set up in two ways:
+
+- **Pre-built Docker image:** Recommended for reproducing the evaluation. The image includes an already-built DualGuard toolchain.
+- **Building from source:** Intended for users who want to modify DualGuard, rebuild its components, or configure the development environment themselves.
+
+The SPEC CPU 2017 benchmark suite must be installed separately in either configuration because it cannot be distributed with the repository.
+
+### 1.1 Using Pre-built DualGuard with Docker
+
+Make sure Docker is installed on the test machine. The pre-built Docker image is available from the anonymized [Docker Hub repository](https://hub.docker.com/r/dualguard/dualguard).
+
+Pull the image and start a container:
+
+```bash
+# Pull the Docker image from Docker Hub
 docker pull dualguard/dualguard:latest
 
-# Run a container with the image
+# Start a container
 docker run --name dualguard -dit dualguard/dualguard
 
-# Get into the container's bash
+# Open a bash shell inside the container
 docker exec -it dualguard bash
 ```
 
-Inside the container, the artifiact is located at `/root/dualguard`. DualGuard has been built in the image, but SPEC CPU 2017 benchmark suite have to be installed manually due to copy right reason. Please install the benchmark suite according to its instruction.
+Inside the container, the artifact is located at `/root/dualguard`.
 
-After the benchmark suite is successfully installed, edit `SPEC_PATH` to point to the installation directory, and run the setup script.
+DualGuard has already been built in the Docker image. However, the SPEC CPU 2017 benchmark suite must be installed manually due to copyright restrictions. Install it according to the suite's installation instructions.
 
-```sh
-# Set up benchmark harness for SPEC
+After installing SPEC CPU 2017:
+
+1. Edit `SPEC_PATH` to point to the benchmark installation directory.
+2. Run the setup script to configure the SPEC benchmark harness.
+
+```bash
+# Set up the benchmark harness for SPEC
 bash ./setup.sh
 ```
 
-### Building DualGuard from Source
+The environment is now ready to run the benchmarks.
 
-#### System Requirements
+### 1.2 Building DualGuard from Source
 
-We have tested building the system under Ubuntu 24.04, which provides the best compatibility of softwares used. Please have 30 GB of disk space available on your system. The instructions in this documentation assumes the user is running this version of Ubuntu Linux.
+Users who want to build DualGuard from source should first configure the required dependencies and then build the toolchain.
 
-#### Building the Toolchain
+#### 1.2.1 System Requirements
 
-First, install the dependency.
+The system has been tested on **Ubuntu 24.04**, which provides the best compatibility with the software dependencies used by DualGuard.
 
-```shell
+The following requirements apply:
+
+- Ubuntu 24.04 (recommended).
+- At least 30 GB of available disk space.
+- Git, CMake, Ninja, Python 3, and the other dependencies listed below.
+- SPEC CPU 2017, installed separately, if reproducing the full benchmark evaluation.
+
+The instructions below assume that the user is running Ubuntu 24.04.
+
+#### 1.2.2 Building the Toolchain
+
+First, install the required dependencies:
+
+```bash
 sudo apt update
 sudo apt install git build-essential python3 ninja-build wget cmake libtinfo-dev libtinfo6
 ```
 
-Then, download the source code from this anonymous [repo](https://anonymous.4open.science/r/DualGuard-B244), and decompress the source code.
+Next, download the source code from the anonymized [DualGuard repository](https://anonymous.4open.science/r/DualGuard-B244) and extract the archive:
 
-```shell
+```bash
 # Download the source code
 wget https://anonymous.4open.science/api/repo/DualGuard-B244/zip -O dualguard.zip
 
-# Decompress the source code
+# Extract the source code
 unzip dualguard.zip -d dualguard
 ```
 
-Finally, navigate into the root directory of the source code and run the building script.
+Navigate to the root directory of the extracted source code and execute the build script.
 
-**Important:** Before running the building script, install SPEC CPU 2017 benchmark suite and edit `SPEC_PATH` to point to the installation directory.
+**Important:** Before running the build script, install the SPEC CPU 2017 benchmark suite and edit `SPEC_PATH` to point to its installation directory.
 
-```shell
+```bash
 cd dualguard
 bash ./build.sh
 ```
 
-### Building from Source inside a Docker Build Environment
+The build script compiles the required toolchain and benchmark components.
 
-If your host is not Ubuntu 24.04 (e.g. a newer distribution whose CMake/glibc no longer build LLVM 14 cleanly), or you want to modify DualGuard and rebuild it, use the build environment in `docker/`. Unlike the pre-built image, the source tree stays on the host and is bind-mounted into an Ubuntu 24.04 container, so edits made on the host are picked up by the next build.
+#### 1.2.3 Building from Source inside a Docker Build Environment
 
-`dev.sh` wraps everything:
+For systems that do not run Ubuntu 24.04 natively, or for users who want to modify DualGuard and rebuild its components, the repository provides a Docker-based development environment in `docker/`.
 
-| Command | What it does |
+This environment uses an Ubuntu 24.04 container while keeping the source tree on the host machine. The repository is bind-mounted into the container, so changes made on the host are available during subsequent builds.
+
+The `dev.sh` script provides the main interface for managing the development environment.
+
+| Command | Description |
 | --- | --- |
-| `./dev.sh image` | Build the `dualguard-dev` image from `docker/Dockerfile` |
-| `./dev.sh shell` | Open an interactive shell in the container |
-| `./dev.sh run <cmd...>` | Run a command in the container, from the repo root |
-| `./dev.sh bg <name> <cmd...>` | Same as `run`, but detached as a container named `<name>` |
+| `./dev.sh image` | Build the `dualguard-dev` image using `docker/Dockerfile`. |
+| `./dev.sh shell` | Open an interactive shell inside the container. |
+| `./dev.sh run <cmd...>` | Execute a command inside the container, starting from the repository root. |
+| `./dev.sh bg <name> <cmd...>` | Execute a command in a detached container with the specified name. |
 
-Notes on how the container is set up:
+**Container configuration notes:**
 
-- The repository is mounted at the **same absolute path** as on the host, because LLVM's build tree records absolute paths. Its **parent directory** is mounted too, because `SPEC_PATH` defaults to `../cpu2017`.
-- The image creates a user with your UID/GID, so files written into the repo are owned by you, not root. Rebuild the image (`./dev.sh image`) if you build it as one user and run it as another.
-- Containers are started with `--cap-add=SYS_NICE`, which the benchmark scripts need to pin processes to a CPU with `taskset`.
+- **Repository mounting:** The repository is mounted at the same absolute path inside the container as on the host. This is necessary because LLVM's build tree records absolute paths. The repository's parent directory is also mounted because `SPEC_PATH` defaults to `../cpu2017`.
+- **User permissions:** The image creates a user with the host's UID and GID. Files generated inside the container are therefore owned by the host user rather than root. Rebuild the image using `./dev.sh image` if the environment is built under one user and subsequently run under another.
+- **CPU permissions:** Containers are started with `--cap-add=SYS_NICE`, which allows benchmark scripts to pin processes to a CPU using `taskset`.
 
-1. Install Docker, and make sure your user can run it without `sudo`:
+**Setup procedure**
 
-    ```shell
-    sudo usermod -aG docker $USER   # then log out and back in (on WSL: wsl --shutdown)
-    ```
+1. Install Docker and configure your user to run Docker commands without `sudo`:
 
-    Until the new group takes effect, you can prefix commands with `sg docker -c "..."`, e.g. `sg docker -c "./dev.sh image"`.
+   ```bash
+   sudo usermod -aG docker $USER
+   ```
 
-2. Build the image (a few minutes; apt downloads are retried automatically if a package arrives corrupted):
+   Log out and back in for the new group membership to take effect. On WSL, run:
 
-    ```shell
-    ./dev.sh image
-    ```
+   ```bash
+   wsl --shutdown
+   ```
 
-3. (Optional) Install SPEC CPU 2017 at `../cpu2017`, or edit `SPEC_PATH` in `build.sh` and `run.sh` to point to it. The installation must be under the repository's parent directory, otherwise it is not visible inside the container.
+   Until the new group membership takes effect, commands can be prefixed with `sg docker -c`, for example:
 
-4. Build the toolchain and benchmarks. This builds SVF, the patched LLVM 14, the analyses, Baggy Bounds, Delta Pointers and the LightSLH benchmarks; building LLVM alone can take hours. Run it detached so it survives closing the terminal:
+   ```bash
+   sg docker -c "./dev.sh image"
+   ```
 
-    ```shell
-    ./dev.sh bg dualguard-build bash -c './build.sh > build.log 2>&1; echo "EXIT $?" >> build.log'
-    tail -f build.log
-    ```
+2. Build the development image:
 
-    The last line of `build.log` is `EXIT 0` on success. If SPEC CPU 2017 is not installed, the final step ("Setting up SPEC benchmarks ...") fails and the log ends with a non-zero exit code; everything needed for the LightSLH benchmarks has already been built at that point. That failed step also leaves a stray file at `../cpu2017`, which you should delete before installing SPEC there.
+   ```bash
+   ./dev.sh image
+   ```
 
-    `build.sh` downloads several large archives (LLVM, Z3, the crypto libraries used as benchmarks). If one of them fails or is corrupted, delete the partial download and re-run the script.
+   The build takes a few minutes. Package downloads are retried automatically if an archive arrives corrupted.
 
-To rebuild a single component after changing its source, run its build command inside the container, e.g.:
+3. (Optional) Install SPEC CPU 2017 at `../cpu2017`, or edit `SPEC_PATH` in `build.sh` and `run.sh` to point to the installation directory.
 
-```shell
+   The SPEC installation must be located under the repository's parent directory to make it accessible inside the container.
+
+4. Build the toolchain and benchmarks.
+
+   The build process compiles SVF, the patched LLVM 14 toolchain, the analyses, Baggy Bounds, DeltaPointers, and the LightSLH benchmarks. Building LLVM alone can take several hours.
+
+   Run the build in the background so that it continues even if the terminal is closed:
+
+   ```bash
+   ./dev.sh bg dualguard-build bash -c './build.sh > build.log 2>&1; echo "EXIT $?" >> build.log'
+   ```
+
+   Monitor the build:
+
+   ```bash
+   tail -f build.log
+   ```
+
+   The final line of `build.log` indicates the exit status. A successful build ends with:
+
+   ```text
+   EXIT 0
+   ```
+
+   If SPEC CPU 2017 is not installed, the final step (`Setting up SPEC benchmarks ...`) fails. However, all components required for the LightSLH benchmarks have already been built at that point.
+
+   The failed setup step also leaves a temporary file at `../cpu2017`. Delete this file before installing SPEC CPU 2017 in that location.
+
+   **Build troubleshooting:** The build script downloads several large archives, including LLVM, Z3, and the cryptographic libraries used by the benchmarks. If a download fails or an archive is corrupted, remove the incomplete download and rerun the build script.
+
+**Rebuilding individual components**
+
+After modifying a component, its build can be rerun independently inside the Docker environment.
+
+For example:
+
+```bash
+# Rebuild LLVM
 ./dev.sh run bash -c 'cd llvm-project-14.0.0.src/build && ninja -j10'
+
+# Rebuild the DualGuard passes
 ./dev.sh run bash -c 'cd Unified-Memory-Safety-Validation/build && ninja'
 ```
 
-## Smoke Test
+---
 
-To verify that the environment is configured correctly before launching the full evaluation via `run.sh`:
+## 2. Smoke Test
+
+Before running the full evaluation through `run.sh`, perform a smoke test to verify that the development environment is configured correctly.
+
+The smoke test uses one representative LightSLH benchmark configuration instead of the full set of 14 benchmarks.
+
+**Procedure:**
 
 1. Open `REPO_ROOT_DIR/LightSLH-benchmarks/bench/wrapper/bench_llsct_free.sh`.
-2. Locate the `params` array (which contains 14 benchmark configurations by default).
-3. Remove all entries except "aes 16 OpenSSL3.3.0 AES".
-4. Run `run.sh lightslh` (or `./dev.sh run ./run.sh lightslh` with the [Docker build environment](#building-from-source-inside-a-docker-build-environment)).
+2. Locate the `params` array, which contains 14 benchmark configurations by default.
+3. Remove all entries except:
 
-This smoke test tries all variants across a single representative workload and completes in under 20 minutes depending on the underlying hardware. After everything successfully run, restore `params` array.
+   ```text
+   aes 16 OpenSSL3.3.0 AES
+   ```
 
-## Running the Benchmarks
+4. Run the LightSLH benchmark script:
 
-**Important:** edit `SPEC_PATH` in `run.sh` to point to the installation directory of SPEC CPU 2017 benchmark suite. Running the benchmarks with the following commands accordingly.
+   ```bash
+   ./run.sh lightslh
+   ```
 
-```shell
-# run SPEC benchmarks
+   If using the Docker build environment, execute:
+
+   ```bash
+   ./dev.sh run ./run.sh lightslh
+   ```
+
+The smoke test compiles and runs all protection variants for the selected workload. Depending on the underlying hardware, it should complete in under 20 minutes.
+
+After confirming that the benchmark runs successfully, restore the original `params` array before starting the full evaluation.
+
+---
+
+## 3. Running the Benchmarks
+
+DualGuard supports two benchmark suites:
+
+- **SPEC CPU 2017:** Requires a separate installation of the SPEC CPU 2017 benchmark suite.
+- **LightSLH:** Included in the repository and can be executed without SPEC CPU 2017.
+
+**Important:** Before running the SPEC benchmarks, edit `SPEC_PATH` in `run.sh` to point to the SPEC CPU 2017 installation directory.
+
+From the repository root, execute the following commands:
+
+```bash
+# Run SPEC CPU 2017 benchmarks
 ./run.sh spec
 
-# run LightSLH benchmarks
+# Run LightSLH benchmarks
 ./run.sh lightslh
 
-# run both
+# Run both benchmark suites
 ./run.sh
 ```
 
-**Note:** If SPEC CPU 2017 benchmark suite is not available, run `run.sh lightslh` to run the LightSLH benchmarks only.
+**Note:** If SPEC CPU 2017 is unavailable, execute `./run.sh lightslh` to run the LightSLH benchmarks independently.
 
-### Running the Benchmarks in the Docker Build Environment
+### 3.1 Running the Benchmarks in the Docker Build Environment
 
-When DualGuard was built with `dev.sh`, run the benchmarks in the same container. The full LightSLH run compiles every benchmark under every protection variant and then measures each one, which takes many hours, so run it detached:
+When DualGuard has been built using `dev.sh`, execute the benchmark scripts inside the same Docker development environment.
 
-```shell
-# LightSLH benchmarks
+The full LightSLH evaluation compiles every benchmark under every protection variant and subsequently measures each configuration. This process takes several hours, so it is recommended to execute the benchmarks in detached containers.
+
+**LightSLH benchmarks:**
+
+```bash
 ./dev.sh bg dualguard-lightslh bash -c './run.sh lightslh > lightslh.log 2>&1; echo "EXIT $?" >> lightslh.log'
-tail -f lightslh.log
 
-# SPEC benchmarks (requires SPEC CPU 2017, see above)
+# Monitor the benchmark run
+tail -f lightslh.log
+```
+
+**SPEC CPU 2017 benchmarks:**
+
+```bash
 ./dev.sh bg dualguard-spec bash -c './run.sh spec > spec.log 2>&1; echo "EXIT $?" >> spec.log'
 ```
 
-A run is finished when the log ends with `EXIT <code>` (`0` on success). `docker ps` lists runs that are still in progress, and `docker stop <name>` cancels one.
+The SPEC benchmark run requires a valid SPEC CPU 2017 installation and a correctly configured `SPEC_PATH`.
 
-Timing measurements are pinned with `taskset` to the last CPU available to the container. For stable numbers, keep the machine otherwise idle during the run; you can restrict the container's CPUs by adding `--cpuset-cpus` to `DOCKER_ARGS` in `dev.sh`.
+**Monitoring and managing benchmark runs**
 
-The LightSLH results are written to `LightSLH-benchmarks/bench/wrapper/result.json`, with per-benchmark compile output in `compile_information.txt` next to it.
+A benchmark run is complete when its log ends with:
 
-## CVE-2019-3859 Evaluation
+```text
+EXIT <code>
+```
 
-The evaluation focuses on spatial memory safety with AddressSanitizer (ASan). It does not assess information flow.
+An exit code of `0` indicates successful completion.
 
-The harness at [`cve-2019-3859/reproducer.c`](cve-2019-3859/reproducer.c) injects a malformed, already-decrypted SSH response into libssh2's packet queue and exercises `libssh2_userauth_list()`.
+The following Docker commands can be used to monitor and manage benchmark execution:
+
+```bash
+# List running containers
+docker ps
+
+# Stop a running benchmark container
+docker stop <name>
+```
+
+**Timing and reproducibility**
+
+Timing measurements are pinned using `taskset` to the last CPU available to the container.
+
+For more stable measurements:
+
+- Keep the host machine otherwise idle during benchmark execution.
+- Avoid running other CPU-intensive processes concurrently.
+- If necessary, restrict the CPUs available to the container by adding `--cpuset-cpus` to `DOCKER_ARGS` in `dev.sh`.
+
+**Benchmark output**
+
+The LightSLH benchmark results are written to:
+
+```text
+LightSLH-benchmarks/bench/wrapper/result.json
+```
+
+Per-benchmark compilation output is stored in `compile_information.txt` in the same directory.
+
+---
+
+## 4. CVE-2019-3859 Evaluation
+
+This evaluation examines DualGuard's effectiveness against spatial memory-safety violations using CVE-2019-3859.
+
+The evaluation focuses specifically on **spatial memory safety** using AddressSanitizer (ASan). It does not evaluate information-flow security.
+
+**Test setup**
+
+The reproducer is located at:
+
+```text
+cve-2019-3859/reproducer.c
+```
+
+The harness injects a malformed, already-decrypted SSH response into libssh2's packet queue and exercises `libssh2_userauth_list()`.
+
+The evaluation compares three configurations:
 
 | Build | Result |
 | --- | --- |
-| libssh2 1.8.0, unprotected | Returned an empty method list; no crash. |
+| libssh2 1.8.0, unprotected | Returned an empty authentication-method list without crashing. |
 | libssh2 1.8.0, ASan | Reported a heap-buffer-overflow read in `memmove`. |
-| libssh2 1.8.1 | Rejected the response with `Unexpected userauth list size`. |
+| libssh2 1.8.1 | Rejected the malformed response with `Unexpected userauth list size`. |
 
-This in-process test isolates the parser; it is not an end-to-end SSH session test. DualGuard results and runtime overhead have not yet been measured. See the [evaluation notes](CVE-2019-3859-ASAN-Evaluation.md) for setup details and limitations.
+**Interpretation**
+
+The test demonstrates that the vulnerable libssh2 1.8.0 implementation contains a heap-buffer-overflow that is detected by AddressSanitizer. The patched libssh2 1.8.1 implementation rejects the malformed response before the vulnerable memory operation occurs.
+
+This is an in-process test that isolates the packet parser. It is not an end-to-end SSH session evaluation.
+
+**Limitations**
+
+- The test evaluates spatial memory safety, not information-flow security.
+- The reproducer exercises the vulnerable parsing path directly rather than establishing a complete SSH session.
+- DualGuard's protection results and runtime overhead have not yet been measured for this evaluation.
+
+For additional setup details and limitations, see the CVE-2019-3859 ASan evaluation notes.
