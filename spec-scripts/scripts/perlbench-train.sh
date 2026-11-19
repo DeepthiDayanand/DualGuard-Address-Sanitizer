@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Shell script to run perlbench_r_base.baseline on test files
+# Calls perlbench directly for each test with proper environment
+
+# Configuration
+PERL_BIN=$1
+
+$PERL_BIN -I./lib diffmail.pl 2 550 15 24 23 100 > diffmail.2.550.15.24.23.100.out 2>> diffmail.2.550.15.24.23.100.err
+$PERL_BIN -I. -I./lib scrabbl.pl < scrabbl.in > scrabbl.out 2>> scrabbl.err
+$PERL_BIN -I./lib splitmail.pl 535 13 25 24 1091 1 > splitmail.535.13.25.24.1091.1.out 2>> splitmail.535.13.25.24.1091.1.err
+$PERL_BIN -I. -I./lib suns.pl > suns.out 2>> suns.err
