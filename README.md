@@ -10,7 +10,6 @@
 - [Smoke Test](#smoke-test)
 - [Running the Benchmarks](#running-the-benchmarks)
     - [Running the Benchmarks in the Docker Build Environment](#running-the-benchmarks-in-the-docker-build-environment)
-- [Visualizing the results](#visualizing-the-results)
 - [CVE-2019-3859 Evaluation](#cve-2019-3859-evaluation)
 
 ## Intro
@@ -176,24 +175,6 @@ A run is finished when the log ends with `EXIT <code>` (`0` on success). `docker
 Timing measurements are pinned with `taskset` to the last CPU available to the container. For stable numbers, keep the machine otherwise idle during the run; you can restrict the container's CPUs by adding `--cpuset-cpus` to `DOCKER_ARGS` in `dev.sh`.
 
 The LightSLH results are written to `LightSLH-benchmarks/bench/wrapper/result.json`, with per-benchmark compile output in `compile_information.txt` next to it.
-
-## Visualizing the results
-
-```shell
-# This will create Figure 5 and 10 in the paper
-cd $SPEC_ROOT/scripts
-python3 plots.py
-
-# This will create Figure 6, 9 and 11 in the paper
-cd LightSLH-benchmarks/bench/wrapper
-python3 plots.py
-```
-
-With the Docker build environment, run the LightSLH plotting script in the container (matplotlib is preinstalled there). The figures are written to `LightSLH-benchmarks/bench/wrapper/plots/` (`overhead_crypto_all.pdf`, `partial.pdf`, `selective.pdf`):
-
-```shell
-./dev.sh run bash -c 'cd LightSLH-benchmarks/bench/wrapper && python3 plots.py'
-```
 
 ## CVE-2019-3859 Evaluation
 
